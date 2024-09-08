@@ -47,6 +47,8 @@ INSERT INTO Movimentos (Id, FkConta, Histórico, Debito, Credito) VALUES
 (4, 2, 'Juros Poupança', 0.00, 10.00),
 (5, 3, 'Compra no Supermercado', 50.00, 0.00);
 
+--Parte 1 criação de funcoes
+
 CREATE FUNCTION incrementar(INTEGER)
 RETURNS INTEGER AS '
     SELECT $1 + 1;
@@ -120,7 +122,13 @@ select id, nome from MaioresClientes (1000);
 SELECT proname, prosrc FROM pg_proc WHERE proname = 'quemdeve';
 
 
---parte 2
+--parte 2 Funções e Triggers
+
+--processo de cricao
+--sintaxe de criacao
+
+
+
 CREATE OR REPLACE FUNCTION select_dinamico(p_tabela TEXT) 
 RETURNS VOID AS $$
 DECLARE
@@ -131,6 +139,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+--Implementação de Function em PL/PgSQL
 CREATE OR REPLACE FUNCTION id_nome_cliente(p_id INTEGER) 
 RETURNS TEXT AS $$
 DECLARE
@@ -144,8 +153,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-SELECT id_nome_cliente(2);
 
+SELECT id_nome_cliente(2);
+--SELECT id_nome_cliente(2000);
+ --    ERROR: Cliente 2000 não existente !
+
+
+-- Criação de uma Function para implementação de uma Trigger
 -- Criação das tabelas
 CREATE TABLE teste (
     id INT4,
@@ -168,8 +182,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Criação do gatilho
+-- Criação do tigger que chamara a funcao
 CREATE TRIGGER trg_insert_teste
 AFTER INSERT ON teste
 FOR EACH ROW
 EXECUTE FUNCTION ftr_ins_teste();
+
+
+
+
+
