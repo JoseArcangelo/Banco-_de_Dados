@@ -1,3 +1,5 @@
+--José Arcangelo, Alex Cancian
+
 create table fornecedor (
     cgc char(12) primary key,
     nome char(30),
@@ -205,11 +207,7 @@ create table dim_loja (
 
 create table dim_data (
     data_key serial primary key,
-    data date unique not null,
-    ano integer,
-    mes integer,
-    dia integer,
-    trimestre integer
+    data date unique not null
 );
 
 create table dim_veiculo (
@@ -219,58 +217,37 @@ create table dim_veiculo (
 );
 
 
-
 create table fato_vendas (
     id_venda serial primary key,
     data_key integer references dim_data(data_key),
     cliente_key integer references dim_cliente(cliente_key),
     loja_key integer references dim_loja(loja_key),
     veiculo_key char(30) references dim_veiculo(numero_chassi),
-    valor_compra decimal(15, 2),
-    valor_imposto decimal(15, 2),
-    valor_impostoicms decimal(15, 2),
-    tipo_transacao char(10)
+    valor_compra decimal(15, 2)
 );
 
-insert into fato_vendas (data_key, cliente_key, loja_key, veiculo_key, valor_compra, valor_imposto, valor_impostoicms, tipo_transacao)
-values 
--- Venda 1
-((select data_key from dim_data where data = '2024-01-01'), 1, 1, 'A001', 35000.00, 3500.00, 700.00, 'Compra'),
--- Venda 2
-((select data_key from dim_data where data = '2024-02-01'), 2, 2, 'B002', 45000.00, 4500.00, 900.00, 'Compra'),
--- Venda 3
-((select data_key from dim_data where data = '2024-03-01'), 1, 2, 'A001', 30000.00, 3000.00, 600.00, 'Compra'),
--- Venda 4
-((select data_key from dim_data where data = '2024-04-01'), 2, 1, 'B002', 40000.00, 4000.00, 800.00, 'Compra'),
--- Venda 5
-((select data_key from dim_data where data = '2024-05-01'), 1, 1, 'A001', 25000.00, 2500.00, 500.00, 'Compra');
+insert into dim_cliente (cpf, nome_cliente, endereco, cidade, bairro, estado, pais, renda)
+select cpf, nome, endereco, cidade, bairro, estado, pais, renda
+from cliente;
 
-
-
-insert into dim_cliente (cpf, nome_cliente, endereco, cidade, bairro, estado, pais, renda) values 
-('123456789012', 'Cliente A', 'Rua Cliente, 123', 'Cidade G', 'Bairro A', 'SP', 'Brasil', 7000.00),
-('987654321098', 'Cliente B', 'Av Cliente, 456', 'Cidade H', 'Bairro B', 'RJ', 'Brasil', 8000.00);
-
-insert into dim_loja (cgc, endereco, cidade, estado, pais)
-values 
-('111111111111', 'Rua Loja 1, 300', 'Cidade C', 'SP', 'Brasil'),
-('222222222222', 'Av Loja 2, 400', 'Cidade D', 'MG', 'Brasil');
+insert into dim_loja (cgc, endereco, cidade, estado)
+select cgcloja, endereco, cidade, estado
+from loja;
 
 insert into dim_veiculo (numero_chassi, modelo)
-values 
-('A001', 'Modelo X'),
-('B002', 'Modelo Y');
+select codigo, modelo from veiculo ;
 
-insert into dim_data (data, ano, mes, dia, trimestre)
+insert into dim_data (data)
+select datacompra from venda;
+
+
+insert into fato_vendas (data_key, cliente_key, loja_key, veiculo_key, valor_compra)
 values 
-('2024-01-01', 2024, 1, 1, 1),
-('2024-02-01', 2024, 2, 1, 1),
-('2024-03-01', 2024, 3, 1, 1),
-('2024-04-01', 2024, 4, 1, 2),
-('2024-05-01', 2024, 5, 1, 2),
-('2024-06-01', 2024, 6, 1, 2),
-('2024-07-01', 2024, 7, 1, 3),
-('2024-08-01', 2024, 8, 1, 3);
+-- Venda 1
+((select data_key from dim_data where data = '2024-05-01'), 1, 1, 'A001', 35000.00),
+-- Venda 2
+((select data_key from dim_data where data = '2024-06-01'), 2, 2, 'B002', 45000.00);
+
 
 --1. Total das vendas de uma determinada loja, num determinado período.
 select 
@@ -291,7 +268,6 @@ select
     dl.endereco,
     dl.cidade,
     dl.estado,
-    dl.pais,
     sum(fv.valor_compra) as total_vendas
 from 
     fato_vendas fv
@@ -302,11 +278,10 @@ join
 where 
     dd.data between '2024-01-01' and '2024-12-31'  
 group by 
-    dl.cgc, dl.endereco, dl.cidade, dl.estado, dl.pais
+    dl.cgc, dl.endereco, dl.cidade, dl.estado
 order by 
     total_vendas desc;  
 --OBS: ordenei com base nas lojas que mais venderam
-    
     
 --3.Lojas que menos venderam num determinado período de tempo.
 select 
@@ -314,7 +289,6 @@ select
     dl.endereco,
     dl.cidade,
     dl.estado,
-    dl.pais,
     sum(fv.valor_compra) as total_vendas
 from 
     fato_vendas fv
@@ -325,9 +299,7 @@ join
 where 
     dd.data between '2024-01-01' and '2024-12-31'
 group by 
-    dl.cgc, dl.endereco, dl.cidade, dl.estado, dl.pais
-order by 
-    total_vendas asc;
+    dl.cgc, dl.endereco, dl.cidade, dl.estado;
 --OBS: ordenei com base nas lojas que menos venderam
 
 --4.Perfil de clientes que devem-se investir.
@@ -347,35 +319,13 @@ ORDER BY
     total_compras DESC;
    
 --5.Veículos de maior aceitação numa determinada região
-WITH ranked_veiculos AS (
-    SELECT 
-        dl.estado, 
-        dv.modelo, 
-        SUM(fv.valor_compra) AS lucro_total,
-        ROW_NUMBER() OVER (PARTITION BY dl.estado ORDER BY SUM(fv.valor_compra) DESC) AS rank
-    FROM 
-        fato_vendas fv
-    JOIN 
-        dim_veiculo dv ON fv.veiculo_key = dv.numero_chassi
-    JOIN 
-        dim_loja dl ON fv.loja_key = dl.loja_key
-    GROUP BY 
-        dl.estado, dv.modelo
-)
-SELECT 
-    estado, 
-    modelo
-FROM 
-    ranked_veiculos
-WHERE 
-    rank = 1
-ORDER BY 
-    estado;
-
-   
-select  * from dim_veiculo;
-select  * from fato_vendas;
-select  * from dim_loja;
+select v.modelo, count(f.veiculo_key) as total_vendas
+from fato_vendas f
+join dim_veiculo v on f.veiculo_key = v.numero_chassi 
+join dim_loja l on f.loja_key = l.loja_key 
+where l.estado = 'SP'
+group by v.modelo
+order by total_vendas desc;
 
    
    
