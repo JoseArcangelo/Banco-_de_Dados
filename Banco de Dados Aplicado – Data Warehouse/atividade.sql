@@ -182,7 +182,7 @@ values ('ALG001', '111111111111', '123456789012', '2024-07-01', '2024-07-01 10:0
 insert into aluguel (codigo, cgcloja, cpf, datacompra, horaaluguel, dataretorno, horaretorno, valordiaria, valorcompra, valorimpostoicms) 
 values ('ALG002', '222222222222', '987654321098', '2024-08-01', '2024-08-01 15:00', '2024-08-05', '2024-08-05 15:00', 250.00, 1200.00, 120.00);
 
---------------------------------
+----------------------------------------------------------------------------------------
 create table dim_cliente (
     cliente_key serial primary key,
     cpf char(12) unique not null references cliente(cpf),
@@ -347,20 +347,31 @@ ORDER BY
     total_compras DESC;
    
 --5.Veículos de maior aceitação numa determinada região
+WITH ranked_veiculos AS (
+    SELECT 
+        dl.estado, 
+        dv.modelo, 
+        SUM(fv.valor_compra) AS lucro_total,
+        ROW_NUMBER() OVER (PARTITION BY dl.estado ORDER BY SUM(fv.valor_compra) DESC) AS rank
+    FROM 
+        fato_vendas fv
+    JOIN 
+        dim_veiculo dv ON fv.veiculo_key = dv.numero_chassi
+    JOIN 
+        dim_loja dl ON fv.loja_key = dl.loja_key
+    GROUP BY 
+        dl.estado, dv.modelo
+)
 SELECT 
-    dl.estado, 
-    dv.modelo, 
-    SUM(fv.valor_compra) AS total_vendas
+    estado, 
+    modelo
 FROM 
-    fato_vendas fv
-JOIN 
-    dim_veiculo dv ON fv.veiculo_key = dv.numero_chassi
-JOIN 
-    dim_loja dl ON fv.loja_key = dl.loja_key
-GROUP BY 
-    dl.estado, dv.modelo
+    ranked_veiculos
+WHERE 
+    rank = 1
 ORDER BY 
-    dl.estado, total_vendas DESC;
+    estado;
+
    
 select  * from dim_veiculo;
 select  * from fato_vendas;
