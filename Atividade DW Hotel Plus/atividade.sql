@@ -1,15 +1,5 @@
-
+--Para adiantar populei as tabelas usando o chat
 --TABELAS
-
-create table cliente (
-    id_cliente serial primary key,
-    nome varchar(100),
-    data_nascimento date,
-    endereco varchar(200),
-    categoria_fidelidade varchar(10) check (categoria_fidelidade in ('bronze', 'prata', 'ouro', 'platina')),
-    data_ultima_alteracao timestamp default current_timestamp
-);
-
 create table hotel (
     id_hotel int primary key,
     nome_hotel varchar(100) not null,
@@ -26,6 +16,16 @@ create table quarto (
     data_ultima_reforma date,
     foreign key (id_hotel) references hotel(id_hotel)
 );
+
+create table cliente (
+    id_cliente serial primary key,
+    nome varchar(100),
+    data_nascimento date,
+    endereco varchar(200),
+    categoria_fidelidade varchar(10) check (categoria_fidelidade in ('bronze', 'prata', 'ouro', 'platina')),
+    data_ultima_alteracao timestamp default current_timestamp
+);
+
 
 create table receitas (
     id_hotel int,
