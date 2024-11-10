@@ -221,7 +221,7 @@ order by
 select 
 	dh.pais,
 	dc.categoria_fidelidade,
-	sum(fr.valor_total_reserva) as gasto_total_por_cliente
+	sum(fr.valor_total_reserva) as total
 from 
 	fato_reserva fr
 join 
@@ -231,7 +231,6 @@ join
 group by 
 	dh.pais, dc.categoria_fidelidade
 order by 
-	gasto_total_por_cliente desc;
-
+	total desc;
 
 
