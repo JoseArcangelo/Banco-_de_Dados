@@ -1,4 +1,4 @@
---NOMES: Bernardo Couto Pereira e José Arcangelo
+---  Fazer os SQL para criação e inserção dos dados das tabelas de origem 
 
 create table clientes(
 cliente_id serial,
@@ -141,6 +141,8 @@ foreign key(data_chegada_id) references dim_tempo(data_id)
 
 
 --POPULANDO TABELAS dimensoes:
+--  SQL para Preencher as tabelas do DW com os dados da tabela de origem.
+
 INSERT INTO dim_cliente (cliente_id, sk, nome, endereco, data_registro, validacao)
 SELECT cliente_id, cliente_id AS sk, nome, endereco, CURRENT_DATE, TRUE
 FROM clientes;
